@@ -16,18 +16,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define DEBUG( string, ... ) printf( string, __VA_ARGS__ )
-//#define DEBUG( ... ) 
-#define ERR( string ) { fprintf( stderr, string ); safe_exit( 1 ); }
+#include "poly.h"
+#include "naive.h"
 
-#define A 0
-#define B 1
-#define C 2
-
-int * poly_size;
-int ** poly;
-
-
+/*
+ * Exit program with all the cleaning.
+ */
 void safe_exit( int val )
 {
 	if( poly )
@@ -43,6 +37,9 @@ void safe_exit( int val )
 	exit( val );
 }
 
+/*
+ * Parse input file.
+ */
 int load_file( char * file )
 {
 	FILE * fd;
@@ -51,49 +48,65 @@ int load_file( char * file )
 	fd = fopen( file, "r" );
 	if( ! fd ) return 1;
 
-	poly_size = (int*)malloc( 3*sizeof(int) );
-	poly = (int**)malloc( 3*sizeof(int*) );
+	poly_size = (int*)calloc( sizeof(int), 3 );
+	poly = (int**)calloc( sizeof(int*), 3 );
 
 	for( num=0; num<2; num++ )
 	{
 		fscanf( fd, "%d", &poly_size[num] );
 		if( ! poly_size[num] ) return 1;
-		poly_size[2] += poly_size[num];
-		poly[num] = (int*)malloc( poly_size[num]*sizeof(int) );
+
+		poly[num] = (int*)calloc( sizeof(int), poly_size[num] );
 		for( i=0; i<poly_size[num]; i++ )
 		{
 			if ( ! fscanf( fd, "%d", &poly[num][i] ) ) return 1;
 		}
 	}
 
-	poly[2] = (int*)malloc( poly_size[2]*sizeof(int) );
+	poly_size[2] = poly_size[0] + poly_size[1] - 1;
+	poly[2] = (int*)calloc( sizeof(int), poly_size[2] );
 
 	fclose( fd );
 	return 0;
 }
 
+/*
+ * Print results.
+ */
 void print_output( void )
 {
 	int i,num;
 
 	for( num=0; num<3; num++ )
 	{
-		printf( "Poly %d: ", num );
+		DEBUG( "Poly %d:", num );
 		for( i=0; i<poly_size[num]; i++ ) 
 		{
-			if( i != 0 ) printf( " + " );
-			printf( "%dx^%d", poly[num][i], i );
+			if( i != 0 ) DEBUG( " +", 0 );
+			printf( " %d", poly[num][i] );
+			DEBUG( "x^%d", i );
 		}
 		printf( "\n");
 	}
 }
 
+/*
+ * Main. Check and parses input, calculate and print.
+ */
 int main( int argc, char ** argv )
 {
 	if( argc != 2 ) ERR("No input file.\n");
 	DEBUG( "Input file: %s\n", argv[1] );
 
 	if( load_file( argv[1] ) ) ERR( "Invalid file format.\n" );
+
+#if defined FFT
+	calculate_fft();
+#elif defined KARTSUBA
+	calculate_kartsuba();
+#else
+	calculate_naive();
+#endif
 
 	print_output();
 
