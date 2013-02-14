@@ -23,6 +23,7 @@ void calculate_naive( void )
 
 	for( i=0; i<poly_size[0]; i++ )
 	{
+#pragma omp parallel for
 		for( j=0; j<poly_size[1]; j++ )
 		{
 			poly[2][i+j] += poly[0][i]*poly[1][j];

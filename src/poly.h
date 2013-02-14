@@ -20,8 +20,8 @@
 /*
  * Some macro helpers.
  */
-#define DEBUG( string, ... ) printf( string, __VA_ARGS__ )
-//#define DEBUG( ... ) 
+//#define DEBUG( string, ... ) printf( string, __VA_ARGS__ )
+#define DEBUG( ... ) 
 #define ERR( string ) { fprintf( stderr, string ); safe_exit( 1 ); }
 
 /*
