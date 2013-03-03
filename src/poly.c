@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 #include "poly.h"
-#include "naive.h"
+#include "calculate.h"
 
 /*
  * Exit program with all the cleaning.
@@ -100,12 +100,15 @@ int main( int argc, char ** argv )
 
 	if( load_file( argv[1] ) ) ERR( "Invalid file format.\n" );
 
-#if defined FFT
-	calculate_fft();
-#elif defined KARTSUBA
-	calculate_kartsuba();
-#else
-	calculate_naive();
+#if defined SERIAL
+	calculate_serial();
+#endif
+#if defined OPENMP
+	calculate_openmp();
+#endif
+
+#if defined __CUDACC__
+	calculate_cuda();
 #endif
 
 	print_output();

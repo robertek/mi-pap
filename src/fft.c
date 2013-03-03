@@ -1,7 +1,7 @@
 /*
  * =====================================================================================
  *
- *       Filename:  naive.c
+ *       Filename:  fft.c
  *
  *    Description:  
  *
@@ -17,33 +17,15 @@
 
 #include "poly.h"
 
-#if defined OPENMP
-void calculate_openmp( void )
-{
-	int i,j;
-
-	for( i=0; i<poly_size[0]; i++ )
-	{
-#pragma omp parallel for
-		for( j=0; j<poly_size[1]; j++ )
-		{
-			poly[2][i+j] += poly[0][i]*poly[1][j];
-		}
-	}
-}
-#endif
 
 #if defined SERIAL
 void calculate_serial( void )
 {
-	int i,j;
+}
+#endif
 
-	for( i=0; i<poly_size[0]; i++ )
-	{
-		for( j=0; j<poly_size[1]; j++ )
-		{
-			poly[2][i+j] += poly[0][i]*poly[1][j];
-		}
-	}
+#if defined OPENMP
+void calculate_openmp( void )
+{
 }
 #endif
