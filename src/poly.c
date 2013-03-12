@@ -79,12 +79,18 @@ void print_output( void )
 
 	for( num=0; num<3; num++ )
 	{
+#ifdef DEBUG
 		DEBUG( "Poly %d:", num );
+#endif
 		for( i=0; i<poly_size[num]; i++ ) 
 		{
+#ifdef DEBUG
 			if( i != 0 ) DEBUG( " +", 0 );
+#endif
 			printf( " %d", poly[num][i] );
+#ifdef DEBUG
 			DEBUG( "x^%d", i );
+#endif
 		}
 		printf( "\n");
 	}
@@ -96,7 +102,9 @@ void print_output( void )
 int main( int argc, char ** argv )
 {
 	if( argc != 2 ) ERR("No input file.\n");
+#ifdef DEBUG
 	DEBUG( "Input file: %s\n", argv[1] );
+#endif
 
 	if( load_file( argv[1] ) ) ERR( "Invalid file format.\n" );
 
