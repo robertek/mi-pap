@@ -12,6 +12,7 @@ set( OCELOT 1 ) # set 0 if ocelot not used
 
 #set( CMAKE_C_FLAGS "-march=native -O3 -pipe -floop-block -floop-strip-mine -floop-interchange -flto" )
 set( CMAKE_C_FLAGS "-O0 -ggdb -Wall -Wno-format-extra-args -fopenmp" )
+link_libraries( -lm )
 
 
 
