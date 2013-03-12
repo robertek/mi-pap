@@ -23,13 +23,17 @@
 
 #define C_SIZE (2*poly_size[0])
 
+/* complex values for polynome interpretation */
 complex ** value;
+/* precalculated roots of unity */
 complex * omega;
+/* bit size of max polynom degree */
 int count_bit_size;
 
 void alloc_arrays( void )
 {
 	value = (complex**) malloc( 3*sizeof(complex*) );
+	/* alloc 1 more item because it cause core when free ?!? */
 	value[0] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
 	value[1] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
 	value[2] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
@@ -43,6 +47,7 @@ void free_arrays( void )
 	free(value[1]);
 	free(value[2]);
 	free(value);
+
 	free(omega);
 }
 
@@ -61,6 +66,8 @@ void print_values( int array )
 }
 #endif
 
+
+/* middle step after fft, just multiply each point (convolution) */
 void multiply_points( void )
 {
 	int i;
@@ -70,6 +77,26 @@ void multiply_points( void )
 	}
 }
 
+/* precalculate roots of unity */
+void calculate_omega( void )
+{
+	int i;
+
+	/*
+	 * omega[i] ... w^i   
+	 * w^0 = 1
+	 * w^i = w^(i-1) * exp(2*pi*I/n)
+	 */
+	omega[0]=1;
+
+	for( i=1 ; i<C_SIZE ; i++ )
+	{
+		/* atan(1.0) = pi/4 */
+		omega[i]=omega[i-1] * cexp(8*atan(1.0)*I/C_SIZE);
+	}
+}
+
+/* calculate inverse bits 0001 => 1000 */
 int inverse_bits( unsigned int num )
 {
 	unsigned int r = num;
@@ -84,6 +111,7 @@ int inverse_bits( unsigned int num )
 	}
 	r <<= s;
 
+	/* fill with zeros upper than count_bit_size */
 	s=1;
 	s <<= count_bit_size;
 	while( s>>=1 ) tmp |= r & s;
@@ -91,10 +119,10 @@ int inverse_bits( unsigned int num )
 	return tmp;
 }
 
+/* copy poly coefficients to complex array in correct position (butterfly) */
 void copy_with_bit_inverse( int array )
 {
-	unsigned int i;
-	unsigned int inverse;
+	unsigned int i,inverse;
 
 	for( i=0 ; i<poly_size[A] ; i++ )
 	{
@@ -105,13 +133,10 @@ void copy_with_bit_inverse( int array )
 
 void fft( int array )
 {
-	int block_size;
+	int block_size=1;
 	complex tmp_omega,tmp1,tmp2;
 	int i,j;
 
-	copy_with_bit_inverse( array );
-
-	block_size=1;
 	while( block_size<C_SIZE )
 	{
 		for( i=0 ; i<C_SIZE ; i+=2*block_size )
@@ -125,75 +150,44 @@ void fft( int array )
 				value[array][i+j+block_size] = tmp2;
 			}
 		}
-		block_size = 2*block_size;
-	}
-}
-
-void calculate_omega( void )
-{
-	int i;
-
-	omega[0]=1;
-
-	for( i=1 ; i<C_SIZE ; i++ )
-	{
-		omega[i]=omega[i-1] * cexp(8*atan(1.0)*I/C_SIZE);
+		block_size <<= 1;
 	}
 }
 
 void inverse_fft()
 {
-	int block_size;
-	complex tmp_omega,tmp1,tmp2;
-	int i,j;
-	int array=2;
-
-	for( i=0 ; i<C_SIZE ; i++ )
-	{
-		value[2][i] = conj(value[2][i]);
-	}
-
-	block_size=1;
-	while( block_size<C_SIZE )
-	{
-		for( i=0 ; i<C_SIZE ; i+=2*block_size )
-		{
-			for( j=0 ; j<block_size ; j++ )
-			{
-				tmp_omega = omega[(C_SIZE*j)/(2*block_size)];
-				tmp1 = value[array][i+j] + tmp_omega*value[array][i+j+block_size];
-				tmp2 = value[array][i+j] - tmp_omega*value[array][i+j+block_size];
-				value[array][i+j] = tmp1;
-				value[array][i+j+block_size] = tmp2;
-			}
-		}
-		block_size = 2*block_size;
-	}
-
-	for( i=0 ; i<C_SIZE ; i++ )
-	{
-		value[2][i] = value[2][i]/C_SIZE;
-	}
-
-	unsigned int k;
+	unsigned int i;
 	unsigned int inverse;
 
-	for( k=0 ; k<C_SIZE ; k++ )
+	for( i=0 ; i<C_SIZE ; i++ )
 	{
-		inverse = inverse_bits( k );
-		poly[array][inverse] = __real__ value[array][k];
+		//value[2][i] = conj(value[2][i]);
+		omega[i] = conj(omega[i]);
+	}
+
+	fft( C );
+
+	for( i=0 ; i<C_SIZE ; i++ )
+	{
+		inverse = inverse_bits( i );
+		poly[C][inverse] = floor(__real__ value[C][i]/C_SIZE + 0.001);
 	}
 }
 
 #if defined SERIAL
 void calculate_serial( void )
 {
+	/* calculate bit size of maximal poly degree */
 	int i=C_SIZE;
 	while( i>>=1 ) count_bit_size++;
 
 	alloc_arrays();
 
 	calculate_omega();
+
+	/* copy data to complex arrays on correct positions */
+	copy_with_bit_inverse( 0 );
+	copy_with_bit_inverse( 1 );
 
 	fft( 0 );
 #ifdef DEBUG
