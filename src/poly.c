@@ -64,7 +64,7 @@ int load_file( char * file )
 	}
 
 	poly_size[2] = poly_size[0] + poly_size[1] - 1;
-	poly[2] = (int*)calloc( sizeof(int), poly_size[2] );
+	poly[2] = (int*)calloc( sizeof(int), poly_size[2] + 1 );
 
 	fclose( fd );
 	return 0;
