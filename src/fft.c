@@ -24,21 +24,21 @@
 #define C_SIZE (2*poly_size[0])
 
 /* complex values for polynome interpretation */
-complex ** value;
+double complex ** value;
 /* precalculated roots of unity */
-complex * omega;
+double complex * omega;
 /* bit size of max polynom degree */
 int count_bit_size;
 
 void alloc_arrays( void )
 {
-	value = (complex**) malloc( 3*sizeof(complex*) );
+	value = (double complex**) malloc( 3*sizeof(double complex*) );
 	/* alloc 1 more item because it cause core when free ?!? */
-	value[0] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
-	value[1] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
-	value[2] = (complex*) calloc( sizeof(complex), C_SIZE+1 );
+	value[0] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
+	value[1] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
+	value[2] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
 
-	omega = (complex*) calloc( sizeof(complex), C_SIZE+1 );
+	omega = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
 }
 
 void free_arrays( void )
@@ -127,14 +127,14 @@ void copy_with_bit_inverse( int array )
 	for( i=0 ; i<poly_size[A] ; i++ )
 	{
 		inverse = inverse_bits( i );
-		__real__(value[array][inverse]) = poly[array][i];
+		__real__ value[array][inverse] = poly[array][i];
 	}
 }
 
 void fft( int array )
 {
 	int block_size=1;
-	complex tmp_omega,tmp1,tmp2;
+	double complex tmp_omega,tmp1,tmp2;
 	int i,j;
 
 	while( block_size<C_SIZE )
@@ -154,19 +154,24 @@ void fft( int array )
 	}
 }
 
+/* inverse fft is normal fft with some modification, eg: w^-1 */
 void inverse_fft()
 {
 	unsigned int i;
 	unsigned int inverse;
+	double complex tmp;
 
-	for( i=0 ; i<C_SIZE ; i++ )
+	/* we multiply now with w^-1, which means reverse the array from 1th position */
+	for( i=1 ; i<poly_size[0]-1 ; i++ )
 	{
-		//value[2][i] = conj(value[2][i]);
-		omega[i] = conj(omega[i]);
+		tmp = omega[C_SIZE-i];
+		omega[C_SIZE-i] = omega[i];
+		omega[i] = tmp;
 	}
 
 	fft( C );
 
+	/* now back to inegers in correct position */
 	for( i=0 ; i<C_SIZE ; i++ )
 	{
 		inverse = inverse_bits( i );
