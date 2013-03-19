@@ -71,6 +71,10 @@ void print_values( int array )
 void multiply_points( void )
 {
 	int i;
+
+#if defined OPENMP
+#pragma omp parallel for private(i) shared(value)
+#endif
 	for( i=0 ; i<C_SIZE ; i++ ) 
 	{
 		value[C][i] = value[A][i]*value[B][i];
@@ -82,6 +86,9 @@ void calculate_omega( void )
 {
 	int i;
 
+	/* atan(1.0) = pi/4 */
+	double complex multipler = cexp(8*atan(1.0)*I/C_SIZE);
+
 	/*
 	 * omega[i] ... w^i   
 	 * w^0 = 1
@@ -91,8 +98,7 @@ void calculate_omega( void )
 
 	for( i=1 ; i<C_SIZE ; i++ )
 	{
-		/* atan(1.0) = pi/4 */
-		omega[i]=omega[i-1] * cexp(8*atan(1.0)*I/C_SIZE);
+		omega[i]=omega[i-1] * multipler;
 	}
 }
 
@@ -124,6 +130,9 @@ void copy_with_bit_inverse( int array )
 {
 	unsigned int i,inverse;
 
+#if defined OPENMP
+#pragma omp parallel for private(i,inverse) shared(poly,value)
+#endif
 	for( i=0 ; i<poly_size[A] ; i++ )
 	{
 		inverse = inverse_bits( i );
@@ -139,6 +148,9 @@ void fft( int array )
 
 	while( block_size<C_SIZE )
 	{
+#if defined OPENMP
+#pragma omp parallel for private(i,j,tmp1,tmp2,tmp_omega) firstprivate(block_size) shared(value,omega)
+#endif
 		for( i=0 ; i<C_SIZE ; i+=2*block_size )
 		{
 			for( j=0 ; j<block_size ; j++ )
@@ -161,6 +173,9 @@ void inverse_fft()
 	unsigned int inverse;
 	double complex tmp;
 
+#if defined OPENMP
+#pragma omp parallel for private(tmp,i) shared(omega)
+#endif
 	/* we multiply now with w^-1, which means reverse the array from 1th position */
 	for( i=1 ; i<poly_size[0]-1 ; i++ )
 	{
@@ -171,6 +186,9 @@ void inverse_fft()
 
 	fft( C );
 
+#if defined OPENMP
+#pragma omp parallel for private(i,inverse) shared(poly,value)
+#endif
 	/* now back to inegers in correct position */
 	for( i=0 ; i<C_SIZE ; i++ )
 	{
@@ -179,7 +197,6 @@ void inverse_fft()
 	}
 }
 
-#if defined SERIAL
 void calculate_serial( void )
 {
 	/* calculate bit size of maximal poly degree */
@@ -213,10 +230,10 @@ void calculate_serial( void )
 
 	free_arrays();
 }
-#endif
 
 #if defined OPENMP
 void calculate_openmp( void )
 {
+	calculate_serial();
 }
 #endif
