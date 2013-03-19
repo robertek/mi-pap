@@ -106,6 +106,7 @@ void calculate_serial( void )
 		calculate_C( i );
 	}
 
+	/* set first and last number */
 	poly[C][0]=D[0];
 	poly[C][2*(poly_size[0]-1)]=D[poly_size[0]-1];
 
@@ -116,6 +117,27 @@ void calculate_serial( void )
 #if defined OPENMP
 void calculate_openmp( void )
 {
+	int i;
+
+	alloc_arrays();
+
+#pragma omp parallel for
+	for ( i=0 ; i<poly_size[0] ; i++ ) 
+	{
+		calculate_D( i );
+	}
+
+#pragma omp parallel for
+	for ( i=1 ; i<2*(poly_size[0]-1) ; i++ ) 
+	{
+		calculate_C( i );
+	}
+
+	/* set first and last number */
+	poly[C][0]=D[0];
+	poly[C][2*(poly_size[0]-1)]=D[poly_size[0]-1];
+
+	free_arrays();
 }
 #endif
 
