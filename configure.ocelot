@@ -1,0 +1,28 @@
+{
+        ocelot: "ocelot",
+        trace: { 
+                database: "traces/database.trace",
+                memory: true,
+                memoryChecker: {
+                        enabled: true,
+                        checkInitialization: false
+                },
+                raceDetector: {
+                        enabled: true,
+                        ignoreIrrelevantWrites: true
+                },
+                debugger: {
+                        enabled: false,
+                        kernelFilter: "_Z13scalarProdGPUPfS_S_ii",
+                        alwaysAttach: true
+                }
+        },
+        cuda: {
+                implementation: CudaRuntime,
+                runtimeApiTrace: "trace/CudaAPI.trace"
+        },
+        executive: {
+                devices: [ emulated ],
+                workerThreadLimit: 2
+        },
+}
