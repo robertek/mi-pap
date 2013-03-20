@@ -7,7 +7,11 @@ include_directories( "${PROJECT_BINARY_DIR}" )
 # cuda options
 set( CUDA_TOOLKIT_ROOT_DIR "/opt/cuda" )
 find_package( CUDA )
+set( CUDA_NVCC_FLAGS -arch=sm_20 )
 set( OCELOT 1 ) # set 0 if ocelot not used
+if( OCELOT )
+	set( CUDA_LIBRARIES -locelot )
+endif()
 #
 
 #set( CMAKE_C_FLAGS "-march=native -O3 -pipe -floop-block -floop-strip-mine -floop-interchange -flto" )
@@ -26,10 +30,9 @@ SET_TARGET_PROPERTIES( poly_openmp_fft
 	PROPERTIES COMPILE_FLAGS "-DOPENMP" )
 
 if( CUDA_FOUND )
-	if( OCELOT )
-		#target_link_libraries( poly_cuda_fft -locelot )
-	endif()
 	cuda_add_executable( poly_cuda_fft src/poly.c src/fft.cu )
+	SET_TARGET_PROPERTIES( poly_cuda_fft
+		PROPERTIES COMPILE_FLAGS "-DCUDA" )
 endif()
 # end fft
 
@@ -43,10 +46,9 @@ SET_TARGET_PROPERTIES( poly_openmp_karatsuba
 	PROPERTIES COMPILE_FLAGS "-DOPENMP" )
 
 if( CUDA_FOUND )
-	if( OCELOT )
-		#target_link_libraries( poly_cuda_karatsuba -locelot )
-	endif()
 	cuda_add_executable( poly_cuda_karatsuba src/poly.c src/karatsuba.cu )
+	SET_TARGET_PROPERTIES( poly_cuda_karatsuba 
+		PROPERTIES COMPILE_FLAGS "-DCUDA" )
 endif()
 # end karatsuba
 
@@ -60,13 +62,11 @@ SET_TARGET_PROPERTIES( poly_openmp_naive
 	PROPERTIES COMPILE_FLAGS "-DOPENMP" )
 
 if( CUDA_FOUND )
-	if( OCELOT )
-		#target_link_libraries( poly_cuda_naive -locelot )
-	endif()
 	cuda_add_executable( poly_cuda_naive src/poly.c src/naive.cu )
+	SET_TARGET_PROPERTIES( poly_cuda_naive 
+		PROPERTIES COMPILE_FLAGS "-DCUDA" )
 endif()
 #end naive
-
 
 
 

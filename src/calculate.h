@@ -20,7 +20,7 @@
 #if defined OPENMP
 void calculate_openmp( void );
 #endif
-#if defined __CUDACC__
+#if defined CUDA
 void calculate_cuda( void );
 #endif
 #if defined SERIAL

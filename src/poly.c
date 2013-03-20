@@ -111,11 +111,12 @@ int main( int argc, char ** argv )
 #if defined SERIAL
 	calculate_serial();
 #endif
+
 #if defined OPENMP
 	calculate_openmp();
 #endif
 
-#if defined __CUDACC__
+#if defined CUDA
 	calculate_cuda();
 #endif
 

@@ -17,8 +17,6 @@
 
 #include "poly.h"
 
-#if defined __CUDACC__
-void calculate_cuda( void )
+extern "C" void calculate_cuda( void )
 {
 }
-#endif
