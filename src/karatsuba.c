@@ -128,6 +128,7 @@ void calculate_openmp( void )
 		calculate_D( i );
 	}
 
+#pragma omp parallel for private(i) firstprivate(poly,poly_size)
 	for ( i=1 ; i<2*(size-1) ; i++ ) 
 	{
 		calculate_C( i );
