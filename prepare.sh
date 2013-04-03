@@ -2,8 +2,10 @@
 
 rm -rf build
 mkdir build
+cp configure.ocelot build
 cd build
 cmake .. >/dev/null
+
 
 cat << EOF
 
