@@ -48,23 +48,23 @@ int load_file( char * file )
 	fd = fopen( file, "r" );
 	if( ! fd ) return 1;
 
-	poly_size = (int*)calloc( sizeof(int), 3 );
-	poly = (int**)calloc( sizeof(int*), 3 );
+	poly_size = (unsigned long int*)calloc( sizeof(long int), 3 );
+	poly = (unsigned long int**)calloc( sizeof(long int*), 3 );
 
 	for( num=0; num<2; num++ )
 	{
-		fscanf( fd, "%d", &poly_size[num] );
+		fscanf( fd, "%ld", &poly_size[num] );
 		if( ! poly_size[num] ) return 1;
 
-		poly[num] = (int*)calloc( sizeof(int), poly_size[num] );
+		poly[num] = (unsigned long int*)calloc( sizeof(long int), poly_size[num] );
 		for( i=0; i<poly_size[num]; i++ )
 		{
-			if ( ! fscanf( fd, "%d", &poly[num][i] ) ) return 1;
+			if ( ! fscanf( fd, "%ld", &poly[num][i] ) ) return 1;
 		}
 	}
 
 	poly_size[2] = poly_size[0] + poly_size[1] - 1;
-	poly[2] = (int*)calloc( sizeof(int), poly_size[2] + 1 );
+	poly[2] = (unsigned long int*)calloc( sizeof(long int), poly_size[2] + 1 );
 
 	fclose( fd );
 	return 0;
@@ -87,7 +87,7 @@ void print_output( void )
 #ifdef DEBUG
 			if( i != 0 ) DEBUG( " +", 0 );
 #endif
-			printf( " %d", poly[num][i] );
+			printf( " %ld", poly[num][i] );
 #ifdef DEBUG
 			DEBUG( "x^%d", i );
 #endif

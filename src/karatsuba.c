@@ -21,11 +21,11 @@
 #include "poly.h"
 
 /* array for helper coefficients */
-long int * D; 
+unsigned long int * D; 
 
 void alloc_arrays( void )
 {
-	D = (long int *) calloc( sizeof(long int), poly_size[0] );
+	D = (unsigned long int *) calloc( sizeof(long int), poly_size[0] );
 }
 
 void free_arrays( void )
@@ -37,7 +37,7 @@ void free_arrays( void )
  * Di coefficient
  * Di = Ai * Bi
  */
-inline void calculate_D( int pos )
+inline void calculate_D( unsigned long int pos )
 {
 	D[pos] = poly[A][pos]*poly[B][pos];
 }
@@ -62,10 +62,10 @@ inline void calculate_D( int pos )
  *
  * sum = alias for "i"
  */
-void calculate_C( int sum )
+void calculate_C( unsigned long int sum )
 {
-	int num = (sum+1) >> 1;
-	int i,pos;
+	unsigned long int num = (sum+1) >> 1;
+	unsigned long int i,pos;
 
 	if( sum - poly_size[A] < 0 )
 	{
@@ -92,7 +92,7 @@ void calculate_C( int sum )
 #if defined SERIAL
 void calculate_serial( void )
 {
-	int i;
+	unsigned long int i;
 
 	alloc_arrays();
 
@@ -117,25 +117,25 @@ void calculate_serial( void )
 #if defined OPENMP
 void calculate_openmp( void )
 {
-	int i;
+	unsigned long int i;
+	unsigned long int size = poly_size[A];
 
 	alloc_arrays();
 
-#pragma omp parallel for
-	for ( i=0 ; i<poly_size[0] ; i++ ) 
+#pragma omp parallel for private(i)
+	for ( i=0 ; i<size ; i++ ) 
 	{
 		calculate_D( i );
 	}
 
-#pragma omp parallel for
-	for ( i=1 ; i<2*(poly_size[0]-1) ; i++ ) 
+	for ( i=1 ; i<2*(size-1) ; i++ ) 
 	{
 		calculate_C( i );
 	}
 
 	/* set first and last number */
 	poly[C][0]=D[0];
-	poly[C][2*(poly_size[0]-1)]=D[poly_size[0]-1];
+	poly[C][2*(size-1)]=D[size-1];
 
 	free_arrays();
 }

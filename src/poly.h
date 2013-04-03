@@ -34,10 +34,10 @@
 /*
  * Array of poly sizes. 
  */
-int * poly_size;
+unsigned long int * poly_size;
 /*
  * Multiple arrays of polynom coefficients.
  */
-int ** poly;
+unsigned long int ** poly;
 
 #endif
