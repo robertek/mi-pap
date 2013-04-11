@@ -23,12 +23,9 @@ __global__ void multiply( unsigned long int * data_a,
 	int i,j;
 	unsigned long int tmp;
 
-	i = threadIdx.x;
-	j = blockIdx.x;
-
-	data_c[i+j] = data_a[i]*data_b[j];
-	//tmp = data_a[i]*data_b[j];
-	//atomicAdd( &data_c[i+j], tmp );
+	for( i=threadIdx.x*size ; i<(threadIdx.x+1)*size ; i++ )
+		for( j=blockIdx.x*size ; j<(blockIdx.x+1)*size ; j++ )
+			data_c[i+j] = data_a[i]*data_b[j];
 }
 
 extern "C" void calculate_cuda( void )
@@ -43,7 +40,7 @@ extern "C" void calculate_cuda( void )
 	cudaMemcpy( data_a, poly[A], sizeof(long int)*poly_size[A], cudaMemcpyHostToDevice );
 	cudaMemcpy( data_b, poly[B], sizeof(long int)*poly_size[A], cudaMemcpyHostToDevice );
 
-	multiply<<<poly_size[A],poly_size[A]>>>( data_a, data_b, data_c, poly_size[A] );
+	multiply<<<32,32>>>( data_a, data_b, data_c, poly_size[A]/32 );
 
 	cudaMemcpy( poly[C], data_c, 2*sizeof(long int)*poly_size[A], cudaMemcpyDeviceToHost );
 
