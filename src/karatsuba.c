@@ -67,14 +67,8 @@ void calculate_C( unsigned long int sum )
 	unsigned long int num = (sum+1) >> 1;
 	unsigned long int i,pos;
 
-	if( sum - poly_size[A] < 0 )
-	{
-		pos=0;
-	}
-	else
-	{
-		pos= sum - poly_size[A] + 1;
-	}
+	if( sum < poly_size[A] ) pos=0;
+	else pos = sum - poly_size[A] + 1;
 
 	for( i=pos ; i<num ; i++ )
 	{
