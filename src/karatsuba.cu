@@ -65,14 +65,10 @@ __global__ void calculate_C(
 	for ( sum=1 ; sum<2*(size-1) ; sum++ ) 
 	{
 		num = (sum+1) >> 1;
-		if( sum < size )
-		{
-			pos=0;
-		}
-		else
-		{
-			pos= sum - size + 1;
-		}
+		data_c[sum] = 0;
+
+		if( sum < size ) pos=0;
+		else pos = sum - size + 1;
 
 		for( i=pos ; i<num ; i++ )
 		{
