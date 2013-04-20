@@ -31,13 +31,15 @@
 #define B 1
 #define C 2
 
+#define ul_int unsigned long int
+
 /*
  * Array of poly sizes. 
  */
-unsigned long int * poly_size;
+ul_int * poly_size;
 /*
  * Multiple arrays of polynom coefficients.
  */
-unsigned long int ** poly;
+ul_int ** poly;
 
 #endif
