@@ -31,7 +31,7 @@
 #define B 1
 #define C 2
 
-#define ul_int unsigned long int
+#define ul_int unsigned int
 
 /*
  * Array of poly sizes. 

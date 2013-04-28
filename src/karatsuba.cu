@@ -17,14 +17,15 @@
 #include <stdio.h>
 
 #include <cuda_runtime.h>
+#include <cuda.h>
 
 #include "poly.h"
 
-#define THREADS 512
+#define THREADS 1024
 
-void cuda_init( void )
+
+void cuda_init( int devID )
 {
-  int devID=0;
 	cudaDeviceProp deviceProp;
 
 	cudaGetDeviceProperties(&deviceProp, devID);
@@ -34,7 +35,7 @@ void cuda_init( void )
 		exit(-1);
 	}
 	cudaSetDevice(devID);
-	printf("gpuDeviceInit() CUDA Device [%d]: \"%s\n", devID, deviceProp.name);
+	fprintf(stderr, "gpuDeviceInit() CUDA Device [%d]: \"%s\n", devID, deviceProp.name);
 }
 
 /*
@@ -51,7 +52,7 @@ __global__ void calculate_D(
 	
 	if( pos<size )
 	{
-		data_d[pos] = data_a[pos]*data_b[pos];
+		data_d[pos] = data_a[pos] * data_b[pos];
 	}
 }
 
@@ -82,39 +83,55 @@ __global__ void calculate_C(
 		ul_int * data_d,
 		ul_int size )
 {
-	ul_int i,pos,num,sum;
-
-	sum = (blockIdx.x)*blockDim.x + (threadIdx.x);
-
-	data_c[sum] = 0;
-
-	if(sum == 0)
-	{
-		data_c[0]=data_d[0];
-		return;
-	}
-	if(sum == 2*(size-1))
-	{
-		data_c[2*(size-1)]=data_d[size-1];
-		return;
-	}
-
-	if( sum%2 == 0 )
-	{
-		data_c[sum] += data_d[sum/2];
-	}
+	ul_int i,num,tmp2;
+	ul_int tmp = 0;
+	ul_int pos = 0;
+	ul_int sum = (blockIdx.x)*blockDim.x + (threadIdx.x) + 1;
+	
+	if(sum >= 2*(size-1)) return;
 
 	num = (sum+1) >> 1;
+	if( sum >= size ) pos = sum - size + 1;
 
-	if( sum < size ) pos=0;
-	else pos = sum - size + 1;
-
+	tmp2 = sum-pos;
 	for( i=pos ; i<num ; i++ )
 	{
-		data_c[sum] += (data_a[i] + data_a[sum-i]) * (data_b[i] + data_b[sum-i]);
-		data_c[sum] -= data_d[i];
-		data_c[sum] -= data_d[sum-i];
+		tmp += (data_a[i]+data_a[tmp2]) * (data_b[i]+data_b[tmp2]);
+		tmp -= data_d[i];
+		tmp -= data_d[tmp2--];
 	}
+
+	atomicAdd( &data_c[sum], tmp );
+}
+
+__global__ void C_zero( 
+		ul_int * data_c,
+		ul_int size )
+{
+	ul_int sum = (blockIdx.x)*blockDim.x + (threadIdx.x);
+	
+	if(sum >= 2*size) return;
+
+	data_c[sum] = 0;
+}
+
+__global__ void calculate_misc( 
+		ul_int * data_c,
+		ul_int * data_d,
+		ul_int size )
+{
+	data_c[threadIdx.x*2*(size-1)] = data_d[threadIdx.x*(size-1)];
+}
+
+__global__ void calculate_even( 
+		ul_int * data_c,
+		ul_int * data_d,
+		ul_int size )
+{
+	ul_int sum = (blockIdx.x)*blockDim.x + (threadIdx.x) + 1;
+	if(sum >= (size-1)) return;
+
+	atomicAdd( &data_c[2*sum],  data_d[sum]);
 }
 
 extern "C" void calculate_cuda( void )
@@ -125,23 +142,35 @@ extern "C" void calculate_cuda( void )
 	ul_int * data_c;
 	ul_int * data_d;
 	ul_int blocks = size/THREADS;
+	cudaStream_t stream[2];
+	cudaStreamCreate(&stream[0]);
+	cudaStreamCreate(&stream[1]);
 
 	if( size%THREADS != 0 ) blocks++;
 
-	cuda_init();
+	cuda_init(0);
 
-	cudaMalloc( &data_a, sizeof(ul_int)*size );
-	cudaMemcpy( data_a, poly[A], sizeof(ul_int)*size, cudaMemcpyHostToDevice );
 	cudaMalloc( &data_b, sizeof(ul_int)*size );
-	cudaMemcpy( data_b, poly[B], sizeof(ul_int)*size, cudaMemcpyHostToDevice );
-	cudaMalloc( &data_d, sizeof(ul_int)*size );
+	cudaMalloc( &data_a, sizeof(ul_int)*size );
 	cudaMalloc( &data_c, 2*sizeof(ul_int)*size );
+	cudaMalloc( &data_d, sizeof(ul_int)*size );
+	cudaMemcpyAsync( data_a, poly[A], sizeof(ul_int)*size, cudaMemcpyHostToDevice, stream[1]);
+	cudaMemcpyAsync( data_b, poly[B], sizeof(ul_int)*size, cudaMemcpyHostToDevice, stream[1]);
+	C_zero<<<2*blocks,THREADS,0,stream[0]>>>( data_c, size );
+	cudaStreamSynchronize( stream[0] );
+	cudaStreamSynchronize( stream[1] );
+
 
 	calculate_D<<<blocks,THREADS>>>( data_a, data_b, data_d, size );
 
-	calculate_C<<<blocks,THREADS>>>( data_a, data_b, data_c, data_d, size );
+	calculate_C<<<2*blocks,THREADS>>>( data_a, data_b, data_c, data_d, size );
+	calculate_even<<<blocks,THREADS>>>( data_c, data_d, size );
+  calculate_misc<<<1,2>>>( data_c, data_d, size);
 
 	cudaMemcpy( poly[C], data_c, 2*sizeof(ul_int)*size, cudaMemcpyDeviceToHost );
+ 
+	cudaStreamDestroy(stream[0]);
+	cudaStreamDestroy(stream[1]);
 	cudaFree( data_a );
 	cudaFree( data_b );
 	cudaFree( data_c );
