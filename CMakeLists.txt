@@ -5,10 +5,11 @@ set( CMAKE_VERBOSE_MAKEFILE no )
 include_directories( "${PROJECT_BINARY_DIR}" )
 
 # cuda options
-set( CUDA_TOOLKIT_ROOT_DIR "/opt/cuda" )
+set( CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda" )
 find_package( CUDA )
 set( CUDA_NVCC_FLAGS -arch=sm_20 )
-set( OCELOT 1 ) # set 0 if ocelot not used
+set( CUDA_LIBRARIES -L"/usr/local/cuda/lib64" -lcufft )
+set( OCELOT 0 ) # set 0 if ocelot not used
 if( OCELOT )
 	set( CUDA_LIBRARIES -locelot )
 endif()
