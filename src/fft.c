@@ -24,21 +24,22 @@
 #define C_SIZE (2*poly_size[0])
 
 /* complex values for polynome interpretation */
-double complex ** value;
+float complex ** value;
 /* precalculated roots of unity */
-double complex * omega;
+float complex * omega;
 /* bit size of max polynom degree */
 int count_bit_size;
 
 void alloc_arrays( void )
 {
-	value = (double complex**) malloc( 3*sizeof(double complex*) );
+	value = (float complex**) malloc( 4*sizeof(float complex*) );
 	/* alloc 1 more item because it cause core when free ?!? */
-	value[0] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
-	value[1] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
-	value[2] = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
+	value[0] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
+	value[1] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
+	value[2] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
+	value[3] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 
-	omega = (double complex*) calloc( sizeof(double complex), C_SIZE+1 );
+	omega = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 }
 
 void free_arrays( void )
@@ -87,7 +88,7 @@ void calculate_omega( void )
 	int i;
 
 	/* atan(1.0) = pi/4 */
-	double complex multipler = cexp(8*atan(1.0)*I/C_SIZE);
+	float complex multipler = cexp(8*atan(1.0)*I/C_SIZE);
 
 	/*
 	 * omega[i] ... w^i   
@@ -103,10 +104,10 @@ void calculate_omega( void )
 }
 
 /* calculate inverse bits 0001 => 1000 */
-int inverse_bits( unsigned int num )
+int inverse_bits( ul_int num )
 {
-	unsigned int r = num;
-	unsigned int tmp = 0;
+	ul_int r = num;
+	ul_int tmp = 0;
 	int s = count_bit_size-1;
 
 	for( num>>=1 ; num ; num>>=1 )
@@ -128,7 +129,7 @@ int inverse_bits( unsigned int num )
 /* copy poly coefficients to complex array in correct position (butterfly) */
 void copy_with_bit_inverse( int array )
 {
-	unsigned int i,inverse;
+	ul_int i,inverse;
 
 #if defined OPENMP
 #pragma omp parallel for private(i,inverse) shared(poly,value)
@@ -143,7 +144,7 @@ void copy_with_bit_inverse( int array )
 void fft( int array )
 {
 	int block_size=1;
-	double complex tmp_omega,tmp1,tmp2;
+	float complex tmp_omega,tmp1,tmp2;
 	int i,j;
 
 	while( block_size<C_SIZE )
@@ -169,9 +170,9 @@ void fft( int array )
 /* inverse fft is normal fft with some modification, eg: w^-1 */
 void inverse_fft()
 {
-	unsigned int i;
-	unsigned int inverse;
-	double complex tmp;
+	ul_int i;
+	ul_int inverse;
+	float complex tmp;
 
 #if defined OPENMP
 #pragma omp parallel for private(tmp,i) shared(omega)
@@ -184,16 +185,25 @@ void inverse_fft()
 		omega[i] = tmp;
 	}
 
-	fft( C );
-
 #if defined OPENMP
-#pragma omp parallel for private(i,inverse) shared(poly,value)
+#pragma omp parallel for private(i,inverse) firstprivate(value)
 #endif
-	/* now back to inegers in correct position */
+	/* do a bitwise inversion of the array */
 	for( i=0 ; i<C_SIZE ; i++ )
 	{
 		inverse = inverse_bits( i );
-		poly[C][inverse] = floor(__real__ value[C][i]/C_SIZE + 0.001);
+		value[B][inverse] = value[C][i];
+	}
+
+	fft( B );
+
+#if defined OPENMP
+#pragma omp parallel for private(i) firstprivate(poly,value)
+#endif
+	/* now back to inegers */
+	for( i=0 ; i<C_SIZE ; i++ )
+	{
+		poly[C][i] = (unsigned int)(value[B][i]/(C_SIZE) +0.001);
 	}
 }
 
