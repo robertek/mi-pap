@@ -37,7 +37,6 @@ void alloc_arrays( void )
 	value[0] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 	value[1] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 	value[2] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
-	value[3] = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 
 	omega = (float complex*) calloc( sizeof(float complex), C_SIZE+1 );
 }
